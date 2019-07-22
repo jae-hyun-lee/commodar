@@ -1,0 +1,9 @@
+python scripts/xml2conllu.py
+
+cut -f 2 /data4/jaeh/context/word2vecf/resource/corpus_includingGE,PC.conll | python3 scripts/vocab.py 5 > /data4/jaeh/context/word2vecf/result/counted_vocabulary_min5_includingGE,PC
+cat /data4/jaeh/context/word2vecf/resource/corpus_includingGE,PC.conll | python3 scripts/extract_deps.py /data4/jaeh/context/word2vecf/result/counted_vocabulary_min5_includingGE,PC 5 > /data4/jaeh/context/word2vecf/result/dep.contexts_min5_includingGE,PC
+./count_and_filter -train /data4/jaeh/context/word2vecf/result/dep.contexts_min5_includingGE,PC -cvocab cv -wvocab wv -min-count 5
+./word2vecf -train /data4/jaeh/context/word2vecf/result/dep.contexts_min5_includingGE,PC -wvocab wv -cvocab cv -output /data4/jaeh/context/word2vecf/result/word2vecf_200_min5_includingGE,PC -size 200 -negative 10 -threads 30
+python3 scripts/vecs2nps.py /data4/jaeh/context/word2vecf/result/word2vecf_200_min5_includingGE,PC /data4/jaeh/context/word2vecf/result/word2vecf_200_min5_np_includingGE,PC
+
+
