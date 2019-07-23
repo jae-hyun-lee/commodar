@@ -4,12 +4,7 @@ from torch.autograd import Variable
 import torch
 import torch.nn as nn
 import numpy as np
-from model_predict import MGNC_CNN_shallow
-from os import path
-import glob
-
-# import xml.etree.ElementTree as ET
-
+from model_predict import MGNC_CNN
 init_time = time.time()
 
 
@@ -33,19 +28,18 @@ def temp_measure(temp_time):
 
 
 def writeOutput(listString, strOutputName):
-    manipulatedData = open(strOutputName, 'w+');
-    strNewRow = '\n'.join(listString);
-    manipulatedData.write(strNewRow);
-    manipulatedData.close();
+    manipulatedData = open(strOutputName, 'w+')
+    strNewRow = '\n'.join(listString)
+    manipulatedData.write(strNewRow)
+    manipulatedData.close()
 
 
 def stringCleansing(string):
-    string = string.replace("\n", "");
-    string = string.replace("\"", "");
-    string = string.replace("\r", "");
-    string = string.strip();
-    # string = string.lower();
-    return string;
+    string = string.replace("\n", "")
+    string = string.replace("\"", "")
+    string = string.replace("\r", "")
+    string = string.strip()
+    return string
 
 
 def test(data, model, params):
@@ -54,12 +48,10 @@ def test(data, model, params):
     test_sen = [[data["word_to_idx"][w] if w in data["vocab"] else params["VOCAB_SIZE"] for w in sent]
                 + [params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent)) for sent in test_sen]
     test_sen = Variable(torch.LongTensor(test_sen)).cuda(params["GPU"])
-    # test_sen = Variable(torch.LongTensor(test_sen))
     test_concept = [[data["concept_to_idx"][concept] if concept in data["concept"] else params["CONCEPT_SIZE"]
                      for concept in seq] + [params["CONCEPT_SIZE"]] * (params["MAX_CONCEPT_LEN"] - len(seq))
                     for seq in test_concept]
     test_concept = Variable(torch.LongTensor(test_concept)).cuda(params["GPU"])
-    # test_concept = Variable(torch.LongTensor(test_concept))
     try:
         pred = np.argmax(model([test_sen, test_concept]).cpu().data.numpy(), axis=1)
         dic_class_label = {0: 'Binding|NA', 1: 'Decrease|Backward', 2: 'Decrease|Forward', 3: 'Increase|Backward', 4: 'Increase|Forward', 5: 'False', 6: 'Regulation|Backward', 7: 'Regulation|Forward'}
@@ -69,19 +61,19 @@ def test(data, model, params):
         return ["CUDA out of memory"]
 
 
-def ookb(data, fine_tuned_state, params, new_vocab, new_concept):
+def oov(data, fine_tuned_state, params, new_vocab, new_concept):
     from gensim.models.keyedvectors import KeyedVectors
 
-    word_to_idx = utilities_predict.load_dictionary("word_to_idx_finetuned")
-    idx_to_word = utilities_predict.load_dictionary("idx_to_word_finetuned")
-    concept_to_idx = utilities_predict.load_dictionary("concept_to_idx_finetuned")
-    idx_to_concept = utilities_predict.load_dictionary("idx_to_concept_finetuned")
+    word_to_idx = utilities_predict.load_dictionary("word_to_idx_fine-tuning")
+    idx_to_word = utilities_predict.load_dictionary("idx_to_word_fine-tuning")
+    concept_to_idx = utilities_predict.load_dictionary("concept_to_idx_fine-tuning")
+    idx_to_concept = utilities_predict.load_dictionary("idx_to_concept_fine-tuning")
 
     loaded_vocab = set(word_to_idx.keys())
     idx = len(loaded_vocab)
-    word_vectors = KeyedVectors.load_word2vec_format("../../word2vec/result/word2vec_whole.model.bin", binary=True)
+    word_vectors = KeyedVectors.load_word2vec_format("n-gram.model.bin", binary=True)
     wv_matrix = []
-    word_dep_vocab, word_dep_vectors = utilities_predict.npy_load("../../word2vecf/result/word2vecf_200_min5_np_2015")
+    word_dep_vocab, word_dep_vectors = utilities_predict.npy_load("dependency")
     wvf_matrix = []
 
     for vocab in new_vocab:
@@ -105,7 +97,7 @@ def ookb(data, fine_tuned_state, params, new_vocab, new_concept):
 
     loaded_concept = set(concept_to_idx.keys())
     idx = len(loaded_concept)
-    semantic_vocab, semantic_vectors = utilities_predict.npy_load("../../UMLS2vec/result/semantic/checkpoints/semantic")
+    semantic_vocab, semantic_vectors = utilities_predict.npy_load("knowledge_triplet")
     concept_matrix = []
 
     for con in new_concept:
@@ -124,7 +116,7 @@ def ookb(data, fine_tuned_state, params, new_vocab, new_concept):
     params["VOCAB_SIZE"] = 55936 + len(wv_matrix)
     params["CONCEPT_SIZE"] = 115 + len(concept_matrix)
 
-    new_model = MGNC_CNN_shallow(**params)
+    new_model = MGNC_CNN(**params)
     new_model_state = new_model.state_dict()
     # print(len(wv_matrix), len(concept_matrix))
 
@@ -159,10 +151,9 @@ def predict(file, fine_tuned_state, params):
         writeOutput(["empty"], file.replace("resource", "result/raw_result"))
     else:
         params["MAX_SENT_LEN"] = max([len(sen) for sen in data["sen"]])
-        # print(params["MAX_SENT_LEN"])
         new_vocab = sorted(list(set([w for sent in data["sen"] for w in sent])))
         new_concept = sorted(list(set([c for concept in data["triplet"] for c in concept])))
-        data, model = ookb(data, fine_tuned_state, params, new_vocab, new_concept)
+        data, model = oov(data, fine_tuned_state, params, new_vocab, new_concept)
 
         data["vocab"] = sorted(data["word_to_idx"].keys())
         data["concept"] = sorted(data["concept_to_idx"].keys())
@@ -198,23 +189,14 @@ def predict_batch():
         "GPU": 0
     }
     filter_size = ",".join([str(size) for size in params['FILTERS']])
-    fine_tuned_path = f"../../learning/result/saved_models(fn50)/context_finetuned_MGNC_semantic_NDK_0.001_{filter_size}.pt"
+    fine_tuned_path = f"context_fine-tuning_NDK_{filter_size}.pt"
     fine_tuned_state = torch.load(fine_tuned_path)
-    # fine_tuned_model = utilities_predict.load_finetuned_model(MGNC_CNN_shallow(**params), params)
 
-    # listFile = sorted(glob.glob("../resource/*of2.tsv"))
-    listFile = sorted(glob.glob("../resource/*.tsv"))
-    for file in listFile:
-        outfile = file.replace("resource", "result/raw_result")
-        if path.isfile(outfile):
-            # print("Existing: ", outfile)
-            continue
-        else:
-            print("Processing: ", outfile)
-            temp_time = time.time()
-            predict(file, fine_tuned_state, params)
-            torch.cuda.empty_cache()
-            temp_measure(temp_time)
+    infile = "[INPUT SENTENCE TSV HERE]"
+    temp_time = time.time()
+    predict(infile, fine_tuned_state, params)
+    torch.cuda.empty_cache()
+    temp_measure(temp_time)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,6 @@
 # assumes google universal-treebank annotation scheme.
 # zcat treebank.gz |python extract_deps.py |gzip - > deps.gz
 import sys
-from collections import defaultdict
 vocab_file = sys.argv[1]
 try:
    THR = int(sys.argv[2])
@@ -55,11 +54,3 @@ for i,sent in enumerate(read_conll(sys.stdin)):
       if h not in vocab: continue
       print(h,"_".join((rel,m)))
       print(m,"I_".join((rel,h)))
-      #d[h].append("_".join((rel,m)))
-      #d[m].append("I_".join((rel,h)))
-   #for w,cs in d.iteritems():
-   #   print w," ".join(cs)
-
-
-
-

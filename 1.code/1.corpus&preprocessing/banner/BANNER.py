@@ -1,8 +1,3 @@
-'''
-Created on Jan 16, 2014
-
-@author: lmteam
-'''
 import time
 import subprocess
 import os
@@ -29,7 +24,6 @@ def stringClensing(string):
     string = string.replace('"', '')
     string = string.replace('\r', '')
     string = string.strip()
-    # string = string.lower()
     return string
 
 
@@ -128,20 +122,6 @@ def tagBANNERExcution(strProcessingFile, strInputFile, strOutputFile, strTagging
     f_Sentences = open(strInputFile, 'r')
     listInputFileName_ForBANNER = manipulationForInput(f_Sentences, strProcessingFile)
 
-    ### Gene-tagging using BANNER ###
-    # print('----START Gene Tagging (BANNER)----')
-
-
-    # for strInputFileName_ForBANNER in listInputFileName_ForBANNER:
-    #     entityTaggingUsingBANNER(strTaggingType, strInputFileName_ForBANNER)
-    # print('Gene-tagging (BANNER) completed!!')
-    # measure()
-    #
-    # ### Disease-tagging using BANNER ###
-    # # print
-    # # '----START Disease Tagging (BANNER)----'
-    # # strTaggingType = 'Disease'
-    #
     ### Multi-processing ###
     strTempDirectoryName = 'tempoutput/Temp_' + strProcessingFile
     if os.path.isdir(strTempDirectoryName): shutil.rmtree(strTempDirectoryName)
@@ -162,21 +142,19 @@ def tagBANNERExcution(strProcessingFile, strInputFile, strOutputFile, strTagging
     tempResultsAggregation(listTempResultsFile, strOutputFile)
 
 
-    # print('tagging (BANNER) completed!!')
-    # measure()
-
     ### Remove temp files ###
     for removeFileName in listInputFileName_ForBANNER: removeTempFiles(removeFileName)
     shutil.rmtree(strTempDirectoryName)
 
 
 def batch_processing():
-    strMainPath = "/data4/jaeh/context/unlabeled/cleansed/"
+    strMainPath = "[SENTENCE TSV PATH HERE]"
     listFile = glob.glob(strMainPath + "*.tsv")
-    strTaggingType = 'Disease'
+    strTaggingType = 'Gene'
+    # strTaggingType = 'Disease'
     for strInputFile in listFile:
         strProcessingFile = strInputFile.replace(strMainPath, "").replace(".tsv", "")
-        strOutputFile = '/data4/jaeh/context/unlabeled/bannered_' + strTaggingType + '/' + strTaggingType + '_BANNER_' + strProcessingFile + '.tsv'
+        strOutputFile = 'bannered_' + strTaggingType + '/' + strTaggingType + '_BANNER_' + strProcessingFile + '.tsv'
         if os.path.isfile(strOutputFile):
             print("Existing file: " + strProcessingFile)
         else:

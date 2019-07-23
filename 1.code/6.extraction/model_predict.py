@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class MGNC_CNN_shallow(nn.Module):
+class MGNC_CNN(nn.Module):
     def __init__(self, **kwargs):
-        super(MGNC_CNN_shallow, self).__init__()
+        super(MGNC_CNN, self).__init__()
 
         self.MODALITY = kwargs["MODALITY"]
         # self.BATCH_SIZE = kwargs["BATCH_SIZE"]

@@ -1,10 +1,7 @@
-import time;
+import time
 import xml.etree.ElementTree as ET
-import os;
-import shutil;
-import glob;
-from multiprocessing import Process;
-init_time = time.time();
+import glob
+init_time = time.time()
 
 
 def measure():
@@ -18,24 +15,23 @@ def measure():
 
 
 def stringClensing(string):
-	string = string.replace('\n', '');
-	string = string.replace('\"', '');
-	string = string.replace('\r', '');
-	string = string.strip();
-	# string = string.lower();
+	string = string.replace('\n', '')
+	string = string.replace('\"', '')
+	string = string.replace('\r', '')
+	string = string.strip()
 	return string;
 
 
 def writeOutput(listString, strOutputName):
-	manipulatedData = open(strOutputName, 'w+');
-	strNewRow = '\n'.join(listString);
-	manipulatedData.write(strNewRow);
-	manipulatedData.close();
+	manipulatedData = open(strOutputName, 'w+')
+	strNewRow = '\n'.join(listString)
+	manipulatedData.write(strNewRow)
+	manipulatedData.close()
 
 
 def PC_event2relation():
-	strInputPath = '/data4/jaeh/context/Resources/PC'
-	listInputPath = glob.glob(strInputPath + '/*_labeled.xml')
+	strInputPath = '[PC PATH HERE]'
+	listInputPath = glob.glob(strInputPath + '/*.xml')
 
 	listWrite = []
 	setIncrease = {'Activation', 'Gene_expression', 'Positive_regulation', 'Transcription', 'Translation'}
@@ -162,12 +158,12 @@ def PC_event2relation():
 
 								listWrite.append('\t'.join([strSet, strSentenceID] + listRelation))
 
-	writeOutput(listWrite, '/data4/jaeh/context/Resources/PC/labeled.tsv')
+	writeOutput(listWrite, '[TSV FILE PATH HERE]')
 
 
 def GE_membership_check():
-	strInputPath = '/data4/jaeh/context/Resources/GE'
-	listInputPath = glob.glob(strInputPath + '/*_label.xml')
+	strInputPath = '[GE PATH HERE]'
+	listInputPath = glob.glob(strInputPath + '/*.xml')
 	dicCorpus = {}
 
 	for strInputFile in listInputPath:
@@ -195,7 +191,7 @@ def GE_membership_check():
 def GE_event2relation():
 
 	# reading metamap results
-	strInputPath = '/data4/jaeh/context/Resources/GE'
+	strInputPath = '[GE PATH HERE]'
 	dicDisease = {}
 	with open(strInputPath + "/GE_MetaMapped_disease.tsv", "r") as fileInput:
 		fileInput.readline() # header
@@ -207,12 +203,7 @@ def GE_event2relation():
 			else:
 				dicDisease[listInstance[1]] = [listInstance[3:]]
 
-	# listInputPath = glob.glob(strInputPath + '/*_labeled.xml')
-	listInputPath = ["/data4/jaeh/context/Resources/GE/GE11-devel_labeled.xml",
-					 "/data4/jaeh/context/Resources/GE/GE11-train_labeled.xml",
-					 "/data4/jaeh/context/Resources/GE/GE13-devel_labeled.xml",
-					 "/data4/jaeh/context/Resources/GE/GE13-train_labeled.xml"]
-
+	listInputPath = glob.glob(strInputPath + '/*.xml')
 	listWrite = []
 	setIncrease = {'Activation', 'Gene_expression', 'Positive_regulation', 'Transcription', 'Translation'}
 	setDecrease = {'Inactivation', 'Degradation', 'Negative_regulation'}
@@ -382,96 +373,12 @@ def GE_event2relation():
 	for i in range(len(listSorted)):
 		listSorted[i] = str(intIndex) + "\t" + listSorted[i]
 		intIndex += 1
-	writeOutput(listSorted, '/data4/jaeh/context/Resources/GE/labeled.tsv')
-
-
-def w2d_arrange():
-	setWrite = set()
-	strCorpusPath = '/data4/jaeh/context/Resources/PC/PC13_MetaMapped_disease_w2G1D.tsv'
-	with open(strCorpusPath, "r") as fileInput:
-		for strInstance in fileInput:
-			strInstance = stringClensing(strInstance)
-			listInstance = strInstance.split("\t")
-			strTemp = listInstance[10].replace(" ", "-")
-			listInstance[10] = strTemp
-
-			if '-' in listInstance[5]:
-				intGene1Offset = int(listInstance[5].split("-")[0])
-				intGene2Offset = int(listInstance[8].split("-")[0])
-
-				if intGene1Offset > intGene2Offset:
-					listInstance = listInstance[:3] + listInstance[8:9] + listInstance[6:8] + listInstance[5:6] + listInstance[3:5] + listInstance[9:]
-				else:
-					listInstance = listInstance[:3] + listInstance[5:6] + listInstance[3:5] + listInstance[8:9] + listInstance[6:8] + listInstance[9:]
-				setWrite.add("\t".join(listInstance))
-	writeOutput(sorted(list(setWrite)), strCorpusPath.replace(".tsv", "_arranged.tsv"))
-
-
-def labeling():
-	strLabelPath = '/data4/jaeh/context/Resources/PC/labeled.tsv'
-	dicLabel = {}
-	with open(strLabelPath, "r") as fileInput:
-		for strInstance in fileInput:
-			strInstance = stringClensing(strInstance)
-			listInstance = strInstance.split("\t")
-			# { sentence ID : [[ cause, theme, type ], [], ... ] }
-			if ' ' in listInstance[2]:
-				strCause = listInstance[2].split(' ')[0]
-			else:
-				strCause = listInstance[2]
-
-			if ' ' in listInstance[3]:
-				strTheme = listInstance[3].split(' ')[0]
-			else:
-				strTheme = listInstance[3]
-
-			if listInstance[1] in dicLabel:
-				dicLabel[listInstance[1]].append([strCause, strTheme, listInstance[5]])
-			else:
-				dicLabel[listInstance[1]] = [[strCause, strTheme, listInstance[5]]]
-
-	listWriteTemp = []
-	strCorpusPath = '/data4/jaeh/context/Resources/PC/PC13_MetaMapped_disease_w2G1D_arranged.tsv'
-	with open(strCorpusPath, "r") as fileInput:
-		for strInstance in fileInput:
-			strInstance = stringClensing(strInstance)
-			listInstance = strInstance.split("\t")
-
-			if listInstance[1] in dicLabel:
-				listTemp = []
-				for listRelation in dicLabel[listInstance[1]]:
-					if ' '.join(sorted(listRelation)[:2]) == ' '.join(sorted([listInstance[3], listInstance[6]])):
-						if listRelation[2] == "Binding":
-							listTemp.append(strInstance + "\t" + listRelation[2] + "\tNA")
-						elif listRelation[0] == listInstance[3]:
-							listTemp.append(strInstance + "\t" + listRelation[2] + "\tForward")
-						elif listRelation[0] == listInstance[6]:
-							listTemp.append(strInstance + "\t" + listRelation[2] + "\tBackward")
-						else:
-							listTemp.append(strInstance + "\t" + listRelation[2] + "\tUnknown")
-
-				if not len(listTemp):
-					listTemp.append(strInstance + "\tNegative\tNA")
-
-				listWriteTemp += listTemp
-			
-			else:
-				listWriteTemp.append(strInstance + "\tNegative\tNA")
-
-	intLine = 0
-	listWrite = []
-	for strLine in sorted(list(set(listWriteTemp))):
-		listWrite.append(str(intLine) + "\t" + strLine)
-		intLine += 1
-	writeOutput(listWrite, '/data4/jaeh/context/Resources/PC/PC13_w2G1D_labeled.tsv')
+	writeOutput(listSorted, '[TSV PATH HERE]')
 
 
 if __name__ == '__main__':
-	# PC_event2relation()
+	GE_membership_check()
+	PC_event2relation()
 	GE_event2relation()
-	# w2d_arrange()
-	# labeling()
-
-	# GE_membership_check()
 	measure()
 

@@ -6,7 +6,6 @@ thr = int(sys.argv[1])
 l = []
 for i,w in enumerate(sys.stdin):
    if i % 1000000 == 0:
-      #if i > 10000000: break
       print(i,len(wc), file=sys.stderr)
       wc.update(l)
       l = []

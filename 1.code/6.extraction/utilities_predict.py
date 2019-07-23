@@ -1,5 +1,3 @@
-from sklearn.utils import shuffle
-import pickle
 import re
 import time
 import torch
@@ -18,10 +16,10 @@ def measure():
 
 
 def writeOutput(listString, strOutputName):
-    manipulatedData = open(strOutputName, 'w+');
-    strNewRow = '\n'.join(listString);
-    manipulatedData.write(strNewRow);
-    manipulatedData.close();
+    manipulatedData = open(strOutputName, 'w+')
+    strNewRow = '\n'.join(listString)
+    manipulatedData.write(strNewRow)
+    manipulatedData.close()
 
 
 def stringCleansing(string):
@@ -29,7 +27,6 @@ def stringCleansing(string):
     string = string.replace("\"", "")
     string = string.replace("\r", "")
     string = string.strip()
-    # string = string.lower()
     return string
 
 
@@ -58,11 +55,6 @@ def position_modification(pattern, string, listPosition, intAdjust):
 
 
 def clean_str(string, pos):
-    """
-    Tokenization/string cleaning for all datasets except for SST.
-    Every dataset is lower cased except for TREC
-    re.sub: replace fuction.. reference: http://egloos.zum.com/sweeper/v/3065126
-    """
     entity1Pos = pos[0]
     entity2Pos = pos[1]
     listPosition = [int(i) for i in entity1Pos.split("-")] + [int(i) for i in entity2Pos.split("-")]
@@ -70,9 +62,6 @@ def clean_str(string, pos):
     if len(pos) > 2:
         contextPos = pos[2]
         listPosition += [int(i) for i in contextPos.split("-")]
-
-    # if len(listPosition) != 6:
-    #     print(listPosition)
 
     # entity 1 should come before entity 2 in the sentence order
     if listPosition[0] > listPosition[2]:
@@ -123,10 +112,10 @@ def token_index(sentence, listPosition):
 
 def load_model(model, params):
     filter_size = ",".join([str(size) for size in params['FILTERS']])
-    path = f"../../result/saved_models(fn50)/context_finetuned_MGNC_semantic_{params['MODALITY']}_0.001_{filter_size}.pt"
+    path = f"context_fine-tuning_{params['MODALITY']}_{filter_size}.pt"
     pretrained_weights = torch.load(path)
     state = model.state_dict()
-    npEmbedding1 = np.load("../../result/saved_dictionary/ookb_n_finetuned.npy")
+    npEmbedding1 = np.load("oov_n_fine-tuning.npy")
     npEmbedding1 = np.concatenate([npEmbedding1, [np.random.uniform(-0.01, 0.01, params["WORD_DIM"]).astype("float16")]], axis=0)
     npEmbedding1 = np.concatenate([npEmbedding1, [np.zeros(params["WORD_DIM"]).astype("float16")]], axis=0)
     state['embedding1.weight'] = torch.cat((pretrained_weights['embedding1.weight'][:-2], torch.from_numpy(npEmbedding1).to('cuda')), 0)
@@ -139,7 +128,7 @@ def load_model(model, params):
         state[f'bn_n_{i}.running_var'] = pretrained_weights[f'bn_n_{i}.running_var']
         state[f'bn_n_{i}.num_batches_tracked'] = pretrained_weights[f'bn_n_{i}.num_batches_tracked']
 
-    npEmbedding2 = np.load("../../result/saved_dictionary/ookb_d_finetuned.npy")
+    npEmbedding2 = np.load("oov_d_fine-tuning.npy")
     npEmbedding2 = np.concatenate([npEmbedding2, [np.random.uniform(-0.01, 0.01, params["WORD_DIM"]).astype("float16")]], axis=0)
     npEmbedding2 = np.concatenate([npEmbedding2, [np.zeros(params["WORD_DIM"]).astype("float16")]], axis=0)
     state['embedding2.weight'] = torch.cat((pretrained_weights['embedding2.weight'][:-2], torch.from_numpy(npEmbedding2).float().to('cuda')), 0)
@@ -152,7 +141,7 @@ def load_model(model, params):
         state[f'bn_d_{i}.running_var'] = pretrained_weights[f'bn_d_{i}.running_var']
         state[f'bn_d_{i}.num_batches_tracked'] = pretrained_weights[f'bn_d_{i}.num_batches_tracked']
 
-    npEmbedding3 = np.load("../../result/saved_dictionary/ookb_k_finetuned.npy")
+    npEmbedding3 = np.load("oov_k_fine-tuning.npy")
     npEmbedding3 = np.concatenate([npEmbedding3, [np.zeros(params["CONCEPT_DIM"]).astype("float16")]], axis=0)
     state['embedding3.weight'] = torch.cat((pretrained_weights['embedding3.weight'][:-1], torch.from_numpy(npEmbedding3).to('cuda')), 0)
     # print(pretrained_weights['embedding3.weight'])
@@ -170,7 +159,7 @@ def load_model(model, params):
 
 def load_finetuned_model(model, params):
     filter_size = ",".join([str(size) for size in params['FILTERS']])
-    path = f"../../learning/result/saved_models(fn50)/context_finetuned_MGNC_semantic_NDK_0.001_{filter_size}.pt"
+    path = f"context_fine-tuning_NDK_{filter_size}.pt"
     pretrained_weights = torch.load(path)
     state = model.state_dict()
     state['embedding1.weight'] = pretrained_weights['embedding1.weight']
@@ -208,7 +197,7 @@ def load_finetuned_model(model, params):
 
 def load_dictionary(key):
     dic = {}
-    path = f"../../learning/result/saved_dictionary/context_{key}.tsv"
+    path = f"context_{key}.tsv"
     with open(path, "r") as fileInput:
         for strInstance in fileInput:
             listInstance = stringCleansing(strInstance).split("\t")
@@ -220,8 +209,6 @@ def load_dictionary(key):
 
 
 def npy_load(strModel):
-    # strModel = "../../word2vec/result/word2vecf_test"
-    # vec = torch.from_numpy(np.load(strModel + ".npy"))
     vec = np.load(strModel + ".npy")
 
     vocab = {}

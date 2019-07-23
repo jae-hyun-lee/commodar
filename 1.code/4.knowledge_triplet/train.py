@@ -9,18 +9,11 @@ from model import ConvKB
 
 from tensorflow.core.protobuf import config_pb2
 
-# name = "concept"
-# name = "concept_partial"
 name = "semantic"
-# name = "concept_source_or"
-
 # Parameters
 data_path = "../resource/input"
 model_path = "../result"
-if name == "semantic":
-    embedding_dim = 10
-else:
-    embedding_dim = 200
+embedding_dim = 10
 num_filters = 500
 learning_rate = 0.001
 batch_size = 128
@@ -50,12 +43,6 @@ tf.flags.DEFINE_string("model_name", name, "")
 tf.flags.DEFINE_boolean("useConstantInit", False, "")
 
 FLAGS = tf.flags.FLAGS
-# FLAGS._parse_flags()
-# print("\nParameters:")
-# for attr, value in sorted(FLAGS.__flags.items()):
-#    print("{}={}".format(attr.upper(), value))
-# print("")
-
 init_time = time.time()
 
 
@@ -118,10 +105,6 @@ if FLAGS.use_pretrained == True:
             print('*****************Error********************!')
             break
     lstEmbed = np.array(lstEmbed, dtype=np.float32)
-
-# print(len(words_indexes), len(entity2id), len(relation2id))
-# assert len(words_indexes) % (len(entity2id) + len(relation2id)) == 0
-
 print("Loading data... finished!")
 measure()
 
@@ -155,10 +138,7 @@ with tf.Graph().as_default():
             useConstantInit=FLAGS.useConstantInit)
 
         # Define Training procedure
-        #optimizer = tf.contrib.opt.NadamOptimizer(1e-3)
         optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
-        #optimizer = tf.train.RMSPropOptimizer(learning_rate=FLAGS.learning_rate)
-        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=FLAGS.learning_rate)
         grads_and_vars = optimizer.compute_gradients(cnn.loss)
         train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
    
@@ -201,9 +181,6 @@ with tf.Graph().as_default():
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
-        # # Write vocabulary
-        # vocab_processor.save(os.path.join(out_dir, "vocab"))
-   
         # Initialize all variables
         sess.run(tf.global_variables_initializer(), options=config_pb2.RunOptions(report_tensor_allocations_upon_oom=True))
          
@@ -216,26 +193,7 @@ with tf.Graph().as_default():
               cnn.input_y: y_batch,
               cnn.dropout_keep_prob: FLAGS.dropout_keep_prob,
             }
-            #_, step, summaries, loss = sess.run([train_op, global_step, train_summary_op, cnn.loss], feed_dict)
             _, step, loss = sess.run([train_op, global_step, cnn.loss], feed_dict)
-            # time_str = datetime.datetime.now().isoformat()
-            # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-            # train_summary_writer.add_summary(summaries, step)
-                  
-        # #Predict function to predict scores for test data
-        # def predict(x_batch, y_batch, writer=None):
-        #     feed_dict = {
-        #       cnn.input_x: x_batch,
-        #       cnn.input_y: y_batch,
-        #       cnn.dropout_keep_prob: 1.0,
-        #
-        #     }
-        #     step, summaries, scores, _ = sess.run([global_step, dev_summary_op, cnn.predictions, cnn.loss], feed_dict)
-        #     step, scores, _ = sess.run([global_step, cnn.predictions, cnn.loss], feed_dict)
-        #     _ = datetime.datetime.now().isoformat()
-        #     if writer:
-        #         writer.add_summary(summaries, step)
-        #     return scores
 
         num_batches_per_epoch = int((data_size - 1) / FLAGS.batch_size) + 1
         for epoch in range(FLAGS.num_epochs):
@@ -245,11 +203,6 @@ with tf.Graph().as_default():
                 train_step(x_batch, y_batch)
                 current_step = tf.train.global_step(sess, global_step)
 
-                # if current_step % 10000 == 0:
-                #     if FLAGS.cls_or_pred == 'prediction':
-                #         print("\nEvaluating the link prediction task for the loss on the valid set at step", current_step)
-                #         predict(x_valid, y_valid, writer=dev_summary_writer)
-            
             if epoch > 0:
                 if epoch % (FLAGS.saveStep - 1) == 0:
                     path = cnn.saver.save(sess, checkpoint_prefix, global_step=epoch + 1)

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 import xml.etree.ElementTree as ET
-import sys
 import time
 import collections
 import gzip
@@ -22,10 +20,10 @@ def measure():
 
 
 def writeOutput(listString, strOutputName):
-    manipulatedData = open(strOutputName, 'w+');
-    strNewRow = '\n'.join(listString);
-    manipulatedData.write(strNewRow);
-    manipulatedData.close();
+    manipulatedData = open(strOutputName, 'w+')
+    strNewRow = '\n'.join(listString)
+    manipulatedData.write(strNewRow)
+    manipulatedData.close()
 
 
 def get_id(s):
@@ -69,64 +67,22 @@ def doc2conllu(doc_elem):
 
 
 def extractionGz():
-    strMainPath = "/data4/jaeh/context/word2vecf"
-    listGZ_2014 = glob.glob(strMainPath + "/TEES_processed_2014/44gb/*.xml.gz")
-    listInputHead = list(set([strGZ[:69] for strGZ in listGZ_2014]))
-
-    for strInput in sorted(listInputHead):
-        outfile = strInput.replace("TEES_processed_2014/44gb/", "resource/pubmed_parse/") + ".conll"
-        if path.isfile(outfile):
-            print("Existing: ", outfile)
-            continue
-
-        print("processing: ", outfile)
-        listWrite = []
-        listInput = glob.glob(strInput + "*.xml.gz")
-        for strGZ in listInput:
-            fileGZ = gzip.open(strGZ, 'rb')
-            print(strGZ)
-            # for (event,elem) in ET.iterparse(sys.stdin,["end"]):
-            for (event, elem) in ET.iterparse(fileGZ):
-                if elem.tag != "document":
-                    continue
-                # We have a document tag done
-                listWrite += doc2conllu(elem)
-
-        writeOutput(listWrite, outfile)
-
-
-def xml2txt_extractionGz():
+    strInput = "[XML.GZ PATH HERE]"
+    listInput = glob.glob(strInput + "*.xml.gz")
+    outfile = "output.conll"
+    print("processing: ", outfile)
     listWrite = []
-    strMainPath = "/data4/jaeh/context/word2vecf"
-    #listGZ_2015 = glob.glob(strMainPath + "/TEES_processed/*.xml.gz")
-    #for strGZ in listGZ_2015:
-    #    print(strGZ)
-    #    fileGZ = gzip.open(strGZ, 'rb')
-    #    # for (event,elem) in ET.iterparse(sys.stdin,["end"]):
-    #    for (event, elem) in ET.iterparse(fileGZ):
-    #        if elem.tag == "sentence":
-    #            listWrite.append(elem.get("text"))
-
-    listGZ_2014 = glob.glob(strMainPath + "/TEES_processed_2014/*.xml.gz")
-    for strGZ in listGZ_2014:
-        print(strGZ)
+    for strGZ in listInput:
         fileGZ = gzip.open(strGZ, 'rb')
-        # for (event,elem) in ET.iterparse(sys.stdin,["end"]):
         for (event, elem) in ET.iterparse(fileGZ):
-            if elem.tag == "sentence":
-                listWrite.append(elem.get("text"))
+            if elem.tag != "document":
+                continue
+            # We have a document tag done
+            listWrite += doc2conllu(elem)
 
-    #listXML = glob.glob(strMainPath + "/GE,PC/*.xml")
-    #for strXML in listXML:
-    #    print(strXML)
-    #    for (event, elem) in ET.iterparse(strXML):
-    #        if elem.tag == "sentence":
-    #            listWrite.append(elem.get("text"))
-
-    writeOutput(listWrite, strMainPath + "/resource/corpus(+GE,PC).txt")
+    writeOutput(listWrite, outfile)
 
 
 if __name__=="__main__":
     extractionGz()
-    # xml2txt_extractionGz()
     measure()
