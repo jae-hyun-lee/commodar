@@ -112,7 +112,7 @@ def token_index(sentence, listPosition):
 
 def load_model(model, params):
     filter_size = ",".join([str(size) for size in params['FILTERS']])
-    path = f"context_fine-tuning_{params['MODALITY']}_{filter_size}.pt"
+    path = f"classification_fine-tuning_{params['MODALITY']}_{filter_size}.pt"
     pretrained_weights = torch.load(path)
     state = model.state_dict()
     npEmbedding1 = np.load("oov_n_fine-tuning.npy")

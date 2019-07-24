@@ -148,7 +148,7 @@ def oov(data, fine_tuned_state, params, new_vocab, new_concept):
 def predict(file, fine_tuned_state, params):
     data = utilities_predict.read_context_unlabeled(file)
     if len(data["sen"]) == 0:
-        writeOutput(["empty"], file.replace("resource", "result/raw_result"))
+        writeOutput(["empty"], file.replace("resource", "result"))
     else:
         params["MAX_SENT_LEN"] = max([len(sen) for sen in data["sen"]])
         new_vocab = sorted(list(set([w for sent in data["sen"] for w in sent])))
@@ -163,7 +163,7 @@ def predict(file, fine_tuned_state, params):
         result = test(data, model, params)
         if "CUDA out of memory" in result[0]:
             memory_error_file_split(file, 4)
-        writeOutput(result, file.replace("resource", "result/raw_result"))
+        writeOutput(result, file.replace("resource", "result"))
 
 
 def memory_error_file_split(strResource, split):
@@ -189,7 +189,7 @@ def predict_batch():
         "GPU": 0
     }
     filter_size = ",".join([str(size) for size in params['FILTERS']])
-    fine_tuned_path = f"context_fine-tuning_NDK_{filter_size}.pt"
+    fine_tuned_path = f"classification_fine-tuning_NDK_{filter_size}.pt"
     fine_tuned_state = torch.load(fine_tuned_path)
 
     infile = "[INPUT SENTENCE TSV HERE]"

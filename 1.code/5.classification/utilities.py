@@ -345,31 +345,19 @@ def read_context_pretrained(boolShuffle=True):
 
 
 def save_model(model, params):
-    semantic = ""
-    if params["KNOWLEDGE"] == "semantic":
-        semantic = "semantic_"
-
-    depth = ""
-    if params["DEPTH"]:
-        depth = "_depth"
-
     filter_size = ",".join([str(size) for size in params['FILTERS']])
-
-    path = f"../../result/saved_models{depth}(fn{params['FILTER_NUM_CONCEPT']})/{params['DATASET']}_{semantic}{params['MODALITY']}_0.001_{filter_size}.pt"
-    # pickle.dump(model, open(path, "wb"))
-    # print(f"A result is saved successfully as {path}!")
+    path = f"classification_{params['DATASET']}_{params['MODALITY']}_{filter_size}.pt"
     torch.save(model.module.state_dict(), path)
-    # print(f"Model in {path} saved successfully!")
 
 
 def save_dictionary(dic, key):
-    path = f"../../result/saved_dictionary/context_{key}.tsv"
+    path = f"context_{key}.tsv"
     writeOutput([str(strKey) + "\t" + str(dic[strKey]) for strKey in dic.keys()], path)
 
 
 def load_dictionary(key):
     dic = {}
-    path = f"../../result/saved_dictionary/context_{key}.tsv"
+    path = f"context_{key}.tsv"
     with open(path, "r") as fileInput:
         for strInstance in fileInput:
             listInstance = stringCleansing(strInstance).split("\t")
@@ -381,7 +369,7 @@ def load_dictionary(key):
 
 
 def save_class(list, key):
-    path = f"../../result/saved_dictionary/context_class_{key}.tsv"
+    path = f"context_class_{key}.tsv"
     writeOutput([str(i) + "\t" + list[i] for i in range(len(list))], path)
 
 
@@ -460,8 +448,6 @@ def load_model(model, params):
 
 
 def npy_load(strModel):
-    # strModel = "../../word2vec/result/word2vecf_test"
-    # vec = torch.from_numpy(np.load(strModel + ".npy"))
     vec = np.load(strModel + ".npy")
 
     vocab = {}
